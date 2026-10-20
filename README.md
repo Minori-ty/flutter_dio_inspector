@@ -7,8 +7,8 @@ No native code, no codegen, no state-management lock-in. One runtime dependency:
 
 <table>
   <tr>
-    <td><img src="./images/1.jpg" width="400" alt="screenshot 1"></td>
-    <td><img src="./images/2.jpg" width="400" alt="screenshot 2"></td>
+    <td><img src="https://raw.githubusercontent.com/Minori-ty/flutter_dio_inspector/refs/heads/master/images/1.jpg" width="400" alt="screenshot 1"></td>
+    <td><img src="https://raw.githubusercontent.com/Minori-ty/flutter_dio_inspector/refs/heads/master/images/2.jpg" width="400" alt="screenshot 2"></td>
   </tr>
 </table>
 
