@@ -1,30 +1,44 @@
-# Files excluded from the published archive.
-#
-# `.pubignore` **replaces** `.gitignore` — when this file exists, pub stops
-# reading `.gitignore` entirely. So every rule from `.gitignore` is repeated
-# here; dropping one would ship `build/` or `.dart_tool/` inside the archive.
-# Keep the two files in sync when either changes.
+# Files excluded from the published archive
 
-# Dart / Flutter build output.
+#
+
+# `.pubignore` **replaces** `.gitignore` — when this file exists, pub stops
+
+# reading `.gitignore` entirely. So every rule from `.gitignore` is repeated
+
+# here; dropping one would ship `build/` or `.dart_tool/` inside the archive
+
+# Keep the two files in sync when either changes
+
+# Dart / Flutter build output
+
 .dart_tool/
 .packages
 build/
 example/.dart_tool/
 
-# Coverage and generated API docs.
+# Coverage and generated API docs
+
 coverage/
 doc/api/
 
-# A package does not pin its own resolution — that is the application's job.
+# A package does not pin its own resolution — that is the application's job
+
 pubspec.lock
 example/pubspec.lock
 
-# IDE state.
+# IDE state
+
 .idea/
 *.iml
 .vscode/
 
 # The demo app lives in the repository, not in the published archive: it is a
+
 # package of its own, it cannot run without `flutter create .`, and it would
-# otherwise show up as a broken example on pub.dev.
+
+# otherwise show up as a broken example on pub.dev
+
 example/
+
+CLAUDE.md
