@@ -17,7 +17,7 @@ create .` inside it to run).
 ```sh
 flutter pub get          # install dependencies
 flutter analyze          # lint (flutter_lints)
-flutter test             # run the full suite (~127 tests)
+flutter test             # run the full suite (~136 tests)
 flutter test test/core_test.dart   # run one file
 flutter test test/core_test.dart --plain-name 'utf8ByteLength'  # run one group/test
 ```
@@ -27,7 +27,7 @@ There is no build step. Tests are pure Dart / widget tests — the interceptor r
 network.
 
 Releasing is tag-driven (see `.github/workflows/release.yml`): bump `version:` in `pubspec.yaml`,
-then `git tag v0.1.1 && git push origin v0.1.1`. The workflow assumes this directory is the repo
+then `git tag v0.2.0 && git push origin v0.2.0`. The workflow assumes this directory is the repo
 root.
 
 ## Architecture
@@ -65,6 +65,18 @@ survives.
 into snapshots and `detectBodyKind` sniffs MIME/content. Streams and `ResponseBody` are recorded by
 size only — reading them would consume data the caller's code needs. Multipart is summarised, never
 serialised.
+
+**URL vs baseUrl.** `NetworkEntry.url` holds the full resolved URL — what the detail view shows, what
+copy and cURL export use, and what `displayOrigin` derives its scheme+host from. `baseUrl` is captured
+alongside it (from `RequestOptions.baseUrl`) so `displayPath` can render the list row *relative* to
+it. The prefix is matched on whole path segments, so a base URL of `…/v1` never eats into a request
+path that merely starts with `/v1x`.
+
+**Console logging.** `NetworkPanelConfig.logToConsole` (default off) makes the interceptor
+`debugPrint` one coloured line per finished request through `formatConsoleLog`
+(`core/console_log.dart`, pure Dart, 24-bit ANSI in the same method/status colours as the panel). It
+runs from `_logIfEnabled` *after* `patch`, so the entry already carries its final duration, status
+and bodies.
 
 **i18n is not ARB/intl.** `PanelStrings` is one class with a Chinese/English ternary per string, so a
 string added to one language and forgotten in the other shows up in a single diff. Strings are a

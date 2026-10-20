@@ -1,6 +1,6 @@
 name: flutter_dio_inspector
 description: "An in-app network panel for Dio: a draggable floating ball with an unread badge, and a full-screen inspector for requests, responses, headers, bodies and cURL."
-version: 0.1.0
+version: 0.2.0
 
 repository: https://github.com/Minori-ty/flutter_dio_inspector
 issue_tracker: https://github.com/Minori-ty/flutter_dio_inspector/issues

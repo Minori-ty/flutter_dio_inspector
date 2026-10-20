@@ -131,8 +131,9 @@ forgetting to.
 ## The panel
 
 - **List** — rounded cards on a grouped background, one per request, newest first. Method is a solid
-  colour-coded pill; the path truncates in the *middle* so both the leading segments and the query
-  stay visible.
+  colour-coded pill; the path is shown relative to `baseUrl` (a shared `/api/v1` prefix is not
+  repeated on every row) and truncates in the *middle* so both the leading segments and the query
+  stay visible. The detail view keeps the full URL.
 - **Filters** — method chips plus a case-insensitive search over URL and method.
 - **Detail** — overview, error, headers as `name: value` with the name bold, request and response
   bodies, and cURL. **The two header sections start folded**: on a phone they push the bodies below
@@ -277,7 +278,7 @@ is testable without a device or a network:
 flutter test
 ```
 
-127 tests cover:
+136 tests cover:
 
 - the ring buffer, byte-budget degradation, UTF-8-safe truncation, cURL quoting, unread-count
   invariants, and opt-in header redaction;
@@ -292,7 +293,7 @@ Pushing a `v*` tag publishes to pub.dev and cuts a GitHub Release:
 
 ```sh
 # bump `version:` in pubspec.yaml first
-git tag v0.1.1 && git push origin v0.1.1
+git tag v0.2.0 && git push origin v0.2.0
 ```
 
 The workflow is `.github/workflows/release.yml` inside this package, and it assumes **this directory

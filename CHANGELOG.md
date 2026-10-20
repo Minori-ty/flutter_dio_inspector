@@ -1,3 +1,14 @@
+## 0.2.0
+
+- List rows now show the path **relative to `baseUrl`**, not the full path after the host. A base URL
+  of `https://api.example.com/v1` turns `/v1/todo`, `/v1/user` into `/todo`, `/user`, so the version
+  prefix is no longer repeated on every row. `NetworkEntry` gains a `baseUrl` field; the detail view,
+  URL copy and cURL export still carry the full URL.
+- Console logging: set `NetworkPanelConfig(logToConsole: true)` and each finished request prints a
+  coloured line via `debugPrint` — method (coloured per verb), the path relative to `baseUrl`, duration,
+  status code, and the captured request/response bodies. The formatter is exported as
+  `formatConsoleLog`; pass `color: false` for the plain-text form.
+
 ## 0.1.0
 
 Initial release — an in-app network panel for [Dio](https://pub.dev/packages/dio).
