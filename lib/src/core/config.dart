@@ -11,6 +11,7 @@ typedef NetworkIgnorePredicate = bool Function(Uri uri, String method);
 class NetworkPanelConfig {
   const NetworkPanelConfig({
     this.enabled = true,
+    this.logToConsole = false,
     this.maxEntries = 200,
     this.maxBytes = 4 * 1024 * 1024,
     this.bodyLimit = 32 * 1024,
@@ -20,6 +21,11 @@ class NetworkPanelConfig {
 
   /// When false the interceptor becomes a pass-through and nothing is recorded.
   final bool enabled;
+
+  /// When true the interceptor prints one coloured line per finished request
+  /// to the console via `debugPrint` — method, path, duration, status and the
+  /// captured bodies. Off by default: the panel is the quiet path.
+  final bool logToConsole;
 
   /// Hard cap on retained entries. Oldest are dropped first.
   final int maxEntries;
@@ -45,6 +51,7 @@ class NetworkPanelConfig {
 
   NetworkPanelConfig copyWith({
     bool? enabled,
+    bool? logToConsole,
     int? maxEntries,
     int? maxBytes,
     int? bodyLimit,
@@ -53,6 +60,7 @@ class NetworkPanelConfig {
   }) {
     return NetworkPanelConfig(
       enabled: enabled ?? this.enabled,
+      logToConsole: logToConsole ?? this.logToConsole,
       maxEntries: maxEntries ?? this.maxEntries,
       maxBytes: maxBytes ?? this.maxBytes,
       bodyLimit: bodyLimit ?? this.bodyLimit,

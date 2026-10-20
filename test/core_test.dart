@@ -261,6 +261,130 @@ void main() {
     });
   });
 
+  group('displayPath', () {
+    NetworkEntry entry(String url, {String baseUrl = ''}) => NetworkEntry(
+          id: 'req-1',
+          method: 'GET',
+          url: url,
+          baseUrl: baseUrl,
+          startedAt: DateTime(2026, 10, 16),
+        );
+
+    test('strips the baseUrl path prefix from the row path', () {
+      expect(
+        entry('https://api.test/v1/todo', baseUrl: 'https://api.test/v1')
+            .displayPath,
+        '/todo',
+      );
+      expect(
+        entry('https://api.test/v1/todo', baseUrl: 'https://api.test/v1/')
+            .displayPath,
+        '/todo',
+      );
+    });
+
+    test('keeps the full path when the baseUrl has no path', () {
+      expect(
+        entry('https://api.test/todo', baseUrl: 'https://api.test').displayPath,
+        '/todo',
+      );
+      expect(entry('https://api.test/todo').displayPath, '/todo');
+    });
+
+    test('does not over-strip a segment that merely shares a prefix', () {
+      expect(
+        entry('https://api.test/v1x/todo', baseUrl: 'https://api.test/v1')
+            .displayPath,
+        '/v1x/todo',
+      );
+    });
+
+    test('preserves the query string', () {
+      expect(
+        entry(
+          'https://api.test/v1/todo?limit=10',
+          baseUrl: 'https://api.test/v1',
+        ).displayPath,
+        '/todo?limit=10',
+      );
+    });
+  });
+
+  group('formatConsoleLog', () {
+    NetworkEntry entry({
+      String method = 'GET',
+      String url = 'https://api.test/v1/todo',
+      String baseUrl = 'https://api.test/v1',
+      int? status = 200,
+      Duration? duration = const Duration(milliseconds: 140),
+      String? requestBody,
+      String? responseBody,
+      NetworkState state = NetworkState.success,
+      String? errorMessage,
+    }) =>
+        NetworkEntry(
+          id: 'req-1',
+          method: method,
+          url: url,
+          baseUrl: baseUrl,
+          startedAt: DateTime(2026, 10, 16),
+          state: state,
+          statusCode: status,
+          duration: duration,
+          requestBody: requestBody == null
+              ? null
+              : BodySnapshot(
+                  kind: BodyKind.json,
+                  preview: requestBody,
+                  byteLength: requestBody.length,
+                ),
+          responseBody: responseBody == null
+              ? null
+              : BodySnapshot(
+                  kind: BodyKind.json,
+                  preview: responseBody,
+                  byteLength: responseBody.length,
+                ),
+          errorMessage: errorMessage,
+        );
+
+    test('summary line is method, relative path, duration and status', () {
+      expect(formatConsoleLog(entry(), color: false), 'GET /todo 140ms 200');
+    });
+
+    test('appends request and response body lines when present', () {
+      expect(
+        formatConsoleLog(
+          entry(requestBody: '{"a":1}', responseBody: '{"b":2}'),
+          color: false,
+        ),
+        'GET /todo 140ms 200\n  req  {"a":1}\n  res  {"b":2}',
+      );
+    });
+
+    test('omits body lines when there is no body', () {
+      expect(formatConsoleLog(entry(), color: false), 'GET /todo 140ms 200');
+    });
+
+    test('falls back to the error message when there is no status', () {
+      expect(
+        formatConsoleLog(
+          entry(status: null, state: NetworkState.error, errorMessage: 'Connection failed'),
+          color: false,
+        ),
+        'GET /todo 140ms Connection failed',
+      );
+    });
+
+    test('wraps method and status in ANSI colour when enabled', () {
+      final out = formatConsoleLog(entry(), color: true);
+      expect(out, contains('\x1b[38;2;'));
+      expect(out, contains('\x1b[0m'));
+      // The path and duration between them stay uncoloured.
+      expect(out, contains(' /todo 140ms '));
+    });
+  });
+
   group('toCurlCommand', () {
     NetworkEntry entry({
       String method = 'GET',

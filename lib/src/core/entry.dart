@@ -116,6 +116,7 @@ class NetworkEntry {
     required this.id,
     required this.method,
     required this.url,
+    this.baseUrl = '',
     required this.startedAt,
     this.requestHeaders = const {},
     this.requestBody,
@@ -134,6 +135,11 @@ class NetworkEntry {
   final String id;
   final String method;
   final String url;
+
+  /// The `BaseOptions.baseUrl` the request was made against, kept so the list
+  /// can show the path *relative* to it (see [displayPath]).
+  final String baseUrl;
+
   final DateTime startedAt;
 
   final Map<String, String> requestHeaders;
@@ -168,14 +174,38 @@ class NetworkEntry {
   /// is not much of a debugging tool.
   final String? failureLabel;
 
-  /// The path and query, for the list row. Falls back to the raw string when the
-  /// URL cannot be parsed — a malformed URL should still be visible.
+  /// The path and query, relative to [baseUrl], for the list row. Falls back to
+  /// the raw string when the URL cannot be parsed — a malformed URL should still
+  /// be visible.
   String get displayPath {
     final parsed = Uri.tryParse(url);
     if (parsed == null) return url;
-    final path = parsed.path.isEmpty ? '/' : parsed.path;
+    final path = _relativePath(parsed);
     return parsed.hasQuery ? '$path?${parsed.query}' : path;
   }
+
+  /// The request path with [baseUrl]'s path prefix removed.
+  ///
+  /// A base URL like `https://api.example.com/v1` turns `…/v1/todo` into
+  /// `/todo`, so a list of `/v1/todo`, `/v1/user` reads as `/todo`, `/user`
+  /// instead of repeating the version prefix on every row. The prefix is matched
+  /// on a whole segment, so `/v1` never eats into `/v1x`. When the base URL has
+  /// no path, or the paths don't line up, the full path is returned unchanged.
+  String _relativePath(Uri uri) {
+    final base = Uri.tryParse(baseUrl);
+    if (base == null) return _pathOf(uri);
+
+    var prefix = base.path;
+    if (prefix.isEmpty || prefix == '/') return _pathOf(uri);
+    if (!prefix.endsWith('/')) prefix = '$prefix/';
+
+    final path = _pathOf(uri);
+    if (!path.startsWith(prefix)) return path;
+    final rest = path.substring(prefix.length);
+    return rest.isEmpty ? '/' : '/$rest';
+  }
+
+  static String _pathOf(Uri uri) => uri.path.isEmpty ? '/' : uri.path;
 
   /// The scheme and host, shown in the detail view.
   String get displayOrigin {
@@ -187,6 +217,7 @@ class NetworkEntry {
   NetworkEntry copyWith({
     String? method,
     String? url,
+    String? baseUrl,
     Map<String, String>? requestHeaders,
     BodySnapshot? requestBody,
     NetworkState? state,
@@ -204,6 +235,7 @@ class NetworkEntry {
       id: id,
       method: method ?? this.method,
       url: url ?? this.url,
+      baseUrl: baseUrl ?? this.baseUrl,
       startedAt: startedAt,
       requestHeaders: requestHeaders ?? this.requestHeaders,
       requestBody: requestBody ?? this.requestBody,

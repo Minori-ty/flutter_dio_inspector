@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../core/config.dart';
+import '../core/console_log.dart';
 import '../core/entry.dart';
 import '../core/format.dart';
 import '../core/serializer.dart';
@@ -79,6 +80,7 @@ class DioNetworkPanelInterceptor extends Interceptor {
     final id = store.begin(
       method: options.method,
       url: options.uri.toString(),
+      baseUrl: options.baseUrl,
       headers: _flattenHeaders(options.headers),
       body: _describeRequestBody(options, config.bodyLimit),
     );
@@ -125,6 +127,7 @@ class DioNetworkPanelInterceptor extends Interceptor {
         failureLabel: succeeded ? null : 'badResponse',
       ),
     );
+    _logIfEnabled(id);
   }
 
   void _finishFailure(DioException err) {
@@ -167,6 +170,7 @@ class DioNetworkPanelInterceptor extends Interceptor {
         failureLabel: err.type.name,
       ),
     );
+    _logIfEnabled(id);
   }
 
   // ------------------------------------------------------------------ helpers
@@ -194,6 +198,20 @@ class DioNetworkPanelInterceptor extends Interceptor {
   String? _entryIdOf(RequestOptions options) {
     final raw = options.extra[entryIdKey];
     return raw is String ? raw : null;
+  }
+
+  /// Prints the finished entry to the console when
+  /// [NetworkPanelConfig.logToConsole] is on.
+  ///
+  /// Runs after `patch`, so the entry carries the final duration, status and
+  /// bodies. Looked up by id rather than passed along because the patch already
+  /// produced the final instance — fetching it again is one cheap scan and
+  /// keeps this helper independent of the two call sites.
+  void _logIfEnabled(String id) {
+    if (!store.config.logToConsole) return;
+    final entry = store.byId(id);
+    if (entry == null) return;
+    debugPrint(formatConsoleLog(entry));
   }
 
   bool _isIgnored(RequestOptions options, NetworkPanelConfig config) {

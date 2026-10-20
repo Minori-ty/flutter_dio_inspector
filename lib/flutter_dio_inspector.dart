@@ -24,6 +24,7 @@ library;
 
 export 'src/core/buffer.dart' show NetworkEntryBuffer;
 export 'src/core/config.dart' show NetworkIgnorePredicate, NetworkPanelConfig;
+export 'src/core/console_log.dart' show formatConsoleLog;
 export 'src/core/curl.dart' show toCurlCommand;
 export 'src/core/entry.dart'
     show BodyKind, BodySnapshot, NetworkEntry, NetworkFailure, NetworkState;

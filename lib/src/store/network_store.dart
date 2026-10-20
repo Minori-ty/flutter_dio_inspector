@@ -57,6 +57,7 @@ class NetworkStore extends ChangeNotifier {
   String begin({
     required String method,
     required String url,
+    String baseUrl = '',
     required Map<String, String> headers,
     BodySnapshot? body,
     DateTime? startedAt,
@@ -65,6 +66,7 @@ class NetworkStore extends ChangeNotifier {
       id: nextEntryId(),
       method: method.toUpperCase(),
       url: url,
+      baseUrl: baseUrl,
       startedAt: startedAt ?? DateTime.now(),
       requestHeaders: redactHeaders(headers, _config.redactedHeaders),
       requestBody: body,

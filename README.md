@@ -84,6 +84,7 @@ and `hideBall: !kDebugMode` on the widget, or simply omit the widget in release.
 NetworkStore(
   config: NetworkPanelConfig(
     enabled: true,
+    logToConsole: false,               // print a coloured line per finished request
     maxEntries: 200,                   // retained rows
     maxBytes: 4 * 1024 * 1024,         // bytes of body preview held in memory
     bodyLimit: 32 * 1024,              // per-body capture limit
@@ -94,6 +95,16 @@ NetworkStore(
 ```
 
 `config` is a setter too, so `store.config = ...` re-applies the limits immediately.
+
+**Console logging.** With `logToConsole: true`, the interceptor prints one coloured line per finished
+request via `debugPrint` — method (coloured per verb), the path relative to `baseUrl`, duration, status
+code, and the captured request/response bodies:
+
+```text
+GET /todo 140ms 200
+  req  {"title":"ship it"}
+  res  {"ok":true}
+```
 
 **Two independent limits protect the app.** `maxEntries` caps the row count; `maxBytes` caps the
 stored body previews. A 40 MB download costs only the `bodyLimit` preview, and if a single body still
