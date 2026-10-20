@@ -1,0 +1,20 @@
+name: flutter_dio_inspector_example
+description: "Demonstrates how to use flutter_dio_inspector: a floating ball and an in-app network inspector for Dio."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4.0
+  flutter_dio_inspector:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

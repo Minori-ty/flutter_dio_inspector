@@ -1,0 +1,31 @@
+name: flutter_dio_inspector
+description: "An in-app network panel for Dio: a draggable floating ball with an unread badge, and a full-screen inspector for requests, responses, headers, bodies and cURL."
+version: 0.1.0
+
+repository: https://github.com/your-org/flutter_dio_inspector
+issue_tracker: https://github.com/your-org/flutter_dio_inspector/issues
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+# pub.dev allows at most 5, so adding one means dropping one.
+# `devtools` was dropped for `inspector`: this is not a Flutter DevTools
+# extension, and `inspector` is what the package actually is — it also groups
+# the package with the other network inspectors people browse for.
+topics:
+  - dio
+  - network
+  - debugging
+  - http
+  - inspector

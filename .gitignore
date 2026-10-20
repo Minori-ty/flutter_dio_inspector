@@ -1,0 +1,24 @@
+# Dart / Flutter build output.
+#
+# `dart pub publish` excludes exactly what this file excludes, so a missing
+# .gitignore means `flutter test`'s multi-megabyte cache under build/ ships inside
+# the published archive.
+.dart_tool/
+.packages
+build/
+
+# Coverage and generated API docs.
+coverage/
+doc/api/
+
+# A package does not pin its own resolution — that is the application's job.
+pubspec.lock
+
+# IDE state.
+.idea/
+*.iml
+.vscode/
+
+# The example is a package of its own.
+example/.dart_tool/
+example/pubspec.lock

@@ -1,0 +1,153 @@
+# Publishes this package to pub.dev and cuts a GitHub Release when a `v*` tag is
+# pushed.
+#
+#   git tag v0.1.1 && git push origin v0.1.1
+#
+# The paths below assume **this directory is the repository root** — nothing here
+# knows about the demo app or any parent folder. Note that GitHub only reads
+# workflows from a repository root, so this file is live once `flutter_dio_inspector`
+# is pushed as its own repo; inside a monorepo it sits inert until you add a thin
+# `uses:` wrapper at the monorepo root.
+#
+# ## One-time setup — the workflow cannot do this part
+#
+# 1. **The package must already exist on pub.dev.** Automated publishing can only
+#    publish *new versions* of an existing package; the first one has to go up by
+#    hand:
+#        dart pub publish
+# 2. On https://pub.dev/packages/flutter_dio_inspector/admin, under "Automated
+#    publishing", enable GitHub Actions and fill in:
+#        Repository   <owner>/<repo>
+#        Tag pattern  v{{version}}
+#    The tag pattern has to match the trigger below, or pub.dev rejects the run.
+# 3. Nothing else. There is no secret to create: authentication is a short-lived
+#    OIDC token that GitHub signs and pub.dev exchanges, so there is nothing to
+#    leak or rotate.
+#
+# ## Notes
+#
+# - No `workflow_dispatch` on purpose: pub.dev only accepts a publish that was
+#   triggered by pushing a tag, so a manual run could not publish anyway.
+# - The `publish` job is the Dart team's reusable workflow, which runs
+#   `dart pub publish --dry-run` before the real publish — a packaging problem
+#   fails the run instead of uploading something broken.
+# - `permissions: id-token: write` on the `publish` job is what lets it request
+#   the OIDC token. It is the only elevated permission in this file besides the
+#   `contents: write` the release job needs.
+
+name: Release
+
+on:
+  push:
+    # A tag like `v0.1.1`. Deliberately loose — `verify` rejects anything that is
+    # not a real version, so a typo fails in seconds instead of at publish time.
+    tags:
+      - 'v*'
+
+# A second run for the same tag would try to publish the same version twice;
+# pub.dev rejects the duplicate, but queueing is a clearer failure.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cheap and first: a tag that disagrees with pubspec.yaml would otherwise
+      # publish the wrong version under a tag that says something else.
+      - name: Check the tag matches the pubspec version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+
+          # v<major>.<minor>.<patch>, with an optional prerelease and/or build
+          # suffix — `v0.2.0-dev.1` and `v0.1.1+3` both pass.
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?(\+[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error title=Bad tag::'$GITHUB_REF_NAME' is not v<major>.<minor>.<patch>"
+            exit 1
+          fi
+
+          declared=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -1 | tr -d '[:space:]"')
+          if [[ "$tag" != "$declared" ]]; then
+            echo "::error title=Version mismatch::Tag '$GITHUB_REF_NAME' does not match pubspec version '$declared'"
+            exit 1
+          fi
+
+          echo "Tag $GITHUB_REF_NAME matches pubspec version $declared"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  publish:
+    name: Publish to pub.dev
+    needs: verify
+    permissions:
+      # Required to request the OIDC token pub.dev exchanges for a publish token.
+      id-token: write
+      # Not optional: naming any permission resets the rest to `none`, and the
+      # reusable workflow below starts with `actions/checkout`.
+      contents: read
+    # Uncomment this *and* tick "Require GitHub Actions environment" on pub.dev to
+    # put a manual approval in front of every publish.
+    # environment: pub.dev
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+
+  release:
+    name: GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -1 | tr -d '[:space:]"')
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      # A source snapshot, not the pub archive — `dart pub publish` builds that
+      # one internally and does not hand it over. `git archive` gives a
+      # downloadable tree that matches the tag, without the build output.
+      - name: Archive the package sources
+        run: |
+          git archive \
+            --prefix="flutter_dio_inspector-${{ steps.version.outputs.value }}/" \
+            --output="flutter_dio_inspector-${{ steps.version.outputs.value }}.tar.gz" \
+            HEAD
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "flutter_dio_inspector ${{ steps.version.outputs.value }}" \
+            --generate-notes \
+            "flutter_dio_inspector-${{ steps.version.outputs.value }}.tar.gz"
+
+      - name: Summarise
+        run: |
+          {
+            echo "### flutter_dio_inspector ${{ steps.version.outputs.value }}"
+            echo ""
+            echo "- pub.dev: https://pub.dev/packages/flutter_dio_inspector/${{ steps.version.outputs.value }}"
+            echo "- release: https://github.com/${{ github.repository }}/releases/tag/${GITHUB_REF_NAME}"
+          } >> "$GITHUB_STEP_SUMMARY"

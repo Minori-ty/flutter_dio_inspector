@@ -1,0 +1,19 @@
+# Analyzer configuration for the package.
+#
+# The generated platform directories do not exist in a package (only in the demo
+# app), so there is nothing to exclude beyond the build output.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - prefer_final_locals
+    - unawaited_futures
