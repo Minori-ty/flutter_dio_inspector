@@ -22,7 +22,7 @@ class NetworkPanelConfig {
   /// When false the interceptor becomes a pass-through and nothing is recorded.
   final bool enabled;
 
-  /// When true the interceptor prints one coloured line per finished request
+  /// When true the interceptor prints one coloured box per finished request
   /// to the console via `debugPrint` — method, path, duration, status and the
   /// captured bodies. Off by default: the panel is the quiet path.
   final bool logToConsole;

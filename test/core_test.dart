@@ -2,6 +2,27 @@ import 'package:flutter_dio_inspector/flutter_dio_inspector.dart';
 import 'package:flutter_dio_inspector/src/core/serializer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Terminal columns of [s], mirroring the wide-character ruler in the console
+/// logger so the alignment test measures with the same one.
+int _cols(String s) {
+  var width = 0;
+  for (final rune in s.runes) {
+    width += _wide(rune) ? 2 : 1;
+  }
+  return width;
+}
+
+bool _wide(int rune) =>
+    (rune >= 0x1100 && rune <= 0x115F) ||
+    (rune >= 0x2E80 && rune <= 0xA4CF) ||
+    (rune >= 0xAC00 && rune <= 0xD7A3) ||
+    (rune >= 0xF900 && rune <= 0xFAFF) ||
+    (rune >= 0xFE30 && rune <= 0xFE4F) ||
+    (rune >= 0xFF00 && rune <= 0xFF60) ||
+    (rune >= 0xFFE0 && rune <= 0xFFE6) ||
+    (rune >= 0x20000 && rune <= 0x3FFFD) ||
+    (rune >= 0x1F300 && rune <= 0x1FAFF);
+
 void main() {
   group('utf8ByteLength', () {
     test('counts bytes, not UTF-16 code units', () {
@@ -348,40 +369,90 @@ void main() {
           errorMessage: errorMessage,
         );
 
-    test('summary line is method, relative path, duration and status', () {
-      expect(formatConsoleLog(entry(), color: false), 'GET /todo 140ms 200');
+    test('draws a box around the summary line', () {
+      final out = formatConsoleLog(entry(), color: false);
+      expect(out, startsWith('┌'));
+      expect(out, endsWith('┘'));
+      expect(out, contains('│ GET /todo 140ms 200 │'));
     });
 
-    test('appends request and response body lines when present', () {
-      expect(
-        formatConsoleLog(
-          entry(requestBody: '{"a":1}', responseBody: '{"b":2}'),
-          color: false,
-        ),
-        'GET /todo 140ms 200\n  req  {"a":1}\n  res  {"b":2}',
+    test('pretty-prints JSON bodies with indentation', () {
+      final out = formatConsoleLog(
+        entry(requestBody: '{"a":1}', responseBody: '{"b":2}'),
+        color: false,
       );
+      expect(out, contains('req'));
+      expect(out, contains('res'));
+      // Compact JSON is re-encoded with indentation and a space after ':'.
+      expect(out, isNot(contains('{"a":1}')));
+      expect(out, contains('"a": 1'));
     });
 
-    test('omits body lines when there is no body', () {
-      expect(formatConsoleLog(entry(), color: false), 'GET /todo 140ms 200');
-    });
-
-    test('falls back to the error message when there is no status', () {
-      expect(
-        formatConsoleLog(
-          entry(status: null, state: NetworkState.error, errorMessage: 'Connection failed'),
-          color: false,
+    test('leaves a text body unformatted', () {
+      final e = NetworkEntry(
+        id: 'req-1',
+        method: 'GET',
+        url: 'https://api.test/todo',
+        startedAt: DateTime(2026, 10, 16),
+        state: NetworkState.success,
+        statusCode: 200,
+        duration: const Duration(milliseconds: 140),
+        responseBody: BodySnapshot(
+          kind: BodyKind.text,
+          preview: '<html></html>',
+          byteLength: 13,
         ),
-        'GET /todo 140ms Connection failed',
       );
+      expect(formatConsoleLog(e, color: false), contains('<html></html>'));
     });
 
-    test('wraps method and status in ANSI colour when enabled', () {
+    test('keeps the summary short and puts the error message in its own section', () {
+      final out = formatConsoleLog(
+        entry(status: null, state: NetworkState.error, errorMessage: 'Connection failed'),
+        color: false,
+      );
+      // The failure reason fills the status slot, not the whole message — a long
+      // message must not widen the summary line past a narrow terminal.
+      expect(out, contains('GET /todo 140ms error'));
+      expect(out, contains('error'));
+      expect(out, contains('Connection failed'));
+    });
+
+    test('wraps a long error message instead of widening the box', () {
+      final out = formatConsoleLog(
+        entry(
+          status: null,
+          state: NetworkState.error,
+          errorMessage: ''.padRight(250, 'x'),
+        ),
+        color: false,
+      );
+      final rows =
+          out.split('\n').where((line) => line.startsWith('│')).toList();
+      expect(rows, isNotEmpty);
+      // Body lines wrap to 100 columns, then gain the two-space indent, then the
+      // '│ ' / ' │' padding — 106 interior columns, not the 250 of the message.
+      final widest = rows.map(_cols).reduce((a, b) => a > b ? a : b);
+      expect(widest, lessThanOrEqualTo(106));
+    });
+
+    test('keeps the right border aligned with CJK text', () {
+      final out = formatConsoleLog(
+        entry(responseBody: '{"msg":"你好"}'),
+        color: false,
+      );
+      expect(out, contains('你好'));
+      final rows =
+          out.split('\n').where((line) => line.startsWith('│')).toList();
+      expect(rows, isNotEmpty);
+      expect(rows.map(_cols).toSet(), hasLength(1));
+    });
+
+    test('wraps the whole block in ANSI colour when enabled', () {
       final out = formatConsoleLog(entry(), color: true);
-      expect(out, contains('\x1b[38;2;'));
-      expect(out, contains('\x1b[0m'));
-      // The path and duration between them stay uncoloured.
-      expect(out, contains(' /todo 140ms '));
+      expect(out, startsWith('\x1b[38;2;'));
+      expect(out, endsWith('\x1b[0m'));
+      expect(out, contains('┌'));
     });
   });
 

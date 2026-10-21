@@ -96,14 +96,25 @@ NetworkStore(
 
 `config` is a setter too, so `store.config = ...` re-applies the limits immediately.
 
-**Console logging.** With `logToConsole: true`, the interceptor prints one coloured line per finished
-request via `debugPrint` — method (coloured per verb), the path relative to `baseUrl`, duration, status
-code, and the captured request/response bodies:
+**Console logging.** With `logToConsole: true`, the interceptor prints one coloured box per finished
+request via `debugPrint` — the whole block is tinted in the method's colour so a request stands out in
+a busy terminal, with the path relative to `baseUrl`, duration, status code, and JSON bodies
+pretty-printed:
 
 ```text
-GET /todo 140ms 200
-  req  {"title":"ship it"}
-  res  {"ok":true}
+┌────────────────────────┐
+│ GET /todo 140ms 200    │
+│                        │
+│ req                    │
+│   {                    │
+│     "title": "ship it" │
+│   }                    │
+│                        │
+│ res                    │
+│   {                    │
+│     "ok": true         │
+│   }                    │
+└────────────────────────┘
 ```
 
 **Two independent limits protect the app.** `maxEntries` caps the row count; `maxBytes` caps the

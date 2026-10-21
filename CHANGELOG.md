@@ -1,3 +1,11 @@
+## 0.2.1
+
+- Console logging now renders each finished request as a coloured box instead of a single line. The
+  whole block is tinted in the method's colour, JSON bodies are pretty-printed with indentation, and a
+  request with no status code shows dio's exact cause (e.g. `receiveTimeout`) on the summary line with
+  the full error message in a separate `error` section. Long lines wrap instead of running off the
+  edge, and the box borders stay aligned around CJK/emoji text by counting wide runes as two columns.
+
 ## 0.2.0
 
 - List rows now show the path **relative to `baseUrl`**, not the full path after the host. A base URL
